@@ -1,0 +1,154 @@
+/*
+ * INTERNSHIP PROJECT: Ingenico Terminal Deployment Pipeline
+ * Author: [Your Name]
+ * Date: [YYYY-MM-DD]
+ * Description: Simulates COM port detection and software deployment
+ * Real-hardware ready - just uncomment the marked sections when devices are available
+ */
+
+pipeline {
+    agent any
+
+    parameters {
+        booleanParam(
+            name: 'SIMULATE_FAILURES',
+            defaultValue: false,
+            description: 'Test error handling scenarios'
+        )
+    }
+
+    environment {
+        // CONFIGURE THESE FOR YOUR SETUP:
+        CATALOGUE_FILE = 'software_catalogue.Mxx'
+        LLT_PATH = 'C:\\Program Files\\Ingenico\\LoadAndLaunchTool\\LLT.exe'
+        
+        // For hardware mode (uncomment later):
+        // PYTHON_SCRIPT = 'C:\\scripts\\detect_com.py'
+    }
+
+    options {
+        timeout(time: 30, unit: 'MINUTES')
+        timestamps()  // Requires Timestamper plugin
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+    }
+
+    stages {
+        // STAGE 1: COM PORT DETECTION
+        stage('Detect Terminal') {
+            steps {
+                script {
+                    if (params.SIMULATE_FAILURES) {
+                        echo "⚠️ SIMULATING COM PORT FAILURE"
+                        error("Failed to detect COM ports")
+                    }
+
+                    // SIMULATION MODE (default)
+                    def comPorts = ['COM1', 'COM3', 'COM4', 'COM5']
+                    env.DETECTED_COM_PORT = comPorts[new Random().nextInt(comPorts.size())]
+                    
+                    /* UNCOMMENT FOR HARDWARE MODE:
+                    env.DETECTED_COM_PORT = bat(
+                        script: "python ${env.PYTHON_SCRIPT}",
+                        returnStdout: true
+                    ).trim()
+                    */
+
+                    echo "✅ Detected terminal on: ${env.DETECTED_COM_PORT}"
+                }
+            }
+        }
+
+        // STAGE 2: PACKAGE PREPARATION
+        stage('Prepare Software') {
+            steps {
+                script {
+                    // Generate simulated UPD file
+                    env.UPD_FILE = "update_${currentBuild.number}.upd"
+                    
+                    bat """
+                        echo [$(date)] Processing ${env.CATALOGUE_FILE} > log.txt
+                        echo Extracted package: ${env.UPD_FILE} >> log.txt
+                        echo "SimulatedUPDContent" > "${env.UPD_FILE}"
+                    """
+                }
+            }
+        }
+
+        // STAGE 3: DEPLOYMENT
+        stage('Deploy to Terminal') {
+            steps {
+                script {
+                    def lltCommand = """
+                        "${env.LLT_PATH}" 
+                        /port:${env.DETECTED_COM_PORT} 
+                        /file:${env.UPD_FILE} 
+                        /silent
+                    """.stripIndent().trim()
+
+                    // SIMULATION MODE
+                    bat """
+                        echo [$(date)] SIMULATED DEPLOYMENT > deployment.log
+                        echo Would execute: ${lltCommand} >> deployment.log
+                        echo Status: Success >> deployment.log
+                    """
+
+                    /* UNCOMMENT FOR HARDWARE MODE:
+                    bat(lltCommand) 
+                    */
+                }
+            }
+        }
+
+        // STAGE 4: VALIDATION (OPTIONAL)
+        stage('Verify Deployment') {
+            when {
+                expression { !params.SIMULATE_FAILURES }
+            }
+            steps {
+                bat """
+                    echo Checking system logs... > verification.txt
+                    findstr "success" deployment.log >> verification.txt || (
+                        echo Verification failed >> verification.txt
+                        exit 0  # Don't fail pipeline for simulation
+                    )
+                """
+            }
+        }
+    }
+
+    post {
+        always {
+            // Generate professional report
+            bat """
+                echo # DEPLOYMENT REPORT > report.md
+                echo ## Execution Summary >> report.md
+                echo "- COM Port: ${env.DETECTED_COM_PORT}" >> report.md
+                echo "- Package: ${env.UPD_FILE}" >> report.md
+                echo "- Duration: ${currentBuild.durationString}" >> report.md
+                echo "## Next Steps" >> report.md
+                echo "1. Connect physical terminal" >> report.md
+                echo "2. Validate LLT tool path" >> report.md
+            """
+
+            // Archive all logs and reports
+            archiveArtifacts artifacts: '*.txt,*.md,*.upd', allowEmptyArchive: true
+            
+            // Clean up workspace (keep 2 most recent builds)
+            cleanWs(cleanWhenAborted: true, cleanWhenFailure: true, cleanWhenNotBuilt: true)
+        }
+
+        success {
+            echo "🎉 Pipeline succeeded!"
+            // slackSend channel: '#your-channel', message: "SUCCESS: ${env.JOB_NAME} Build #${env.BUILD_NUMBER}"
+        }
+
+        failure {
+            echo "❌ Pipeline failed - check logs"
+            // slackSend channel: '#your-channel', color: 'danger', message: "FAILED: ${env.JOB_NAME} Build #${env.BUILD_NUMBER}"
+        }
+
+        unstable {
+            echo "⚠️ Pipeline unstable - tests may have failed"
+        }
+    }
+}
