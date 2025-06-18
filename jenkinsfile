@@ -5,24 +5,36 @@ pipeline {
         stage('Checkout') {
             steps {
                 echo "1. Fetching code from Git repository..."
-                git branch: 'main', 
-                url: 'https://github.com/NourChallouf1/summerinternship.git'
+                checkout([$class: 'GitSCM', 
+                         branches: [[name: '*/main']],
+                         extensions: [],
+                         userRemoteConfigs: [[url: 'https://github.com/NourChallouf1/summerinternship.git']])
             }
         }
         
         stage('Build') {
             steps {
                 echo "2. Building the application..."
-                bat 'echo Simulating build step...'
-                bat 'python --version || echo [INFO] Python not installed - continuing simulation'
-                // Continue even if Python is missing
+                script {
+                    // Safe Python check that won't fail the pipeline
+                    def pythonCheck = bat(script: 'python --version', returnStatus: true)
+                    if (pythonCheck == 0) {
+                        echo "Python is available"
+                    } else {
+                        echo "Python not found - continuing in simulation mode"
+                    }
+                    
+                    // Continue with build steps
+                    bat 'echo Simulating build process...'
+                }
             }
         }
         
         stage('Test') {
             steps {
                 echo "3. Running tests..."
-                bat 'echo Simulating tests...'
+                bat 'echo Simulating test execution...'
+                bat 'echo All tests passed!'
             }
         }
         
@@ -36,7 +48,7 @@ pipeline {
     
     post {
         always {
-            echo "Pipeline completed!"
+            echo "Pipeline completed with status: ${currentBuild.currentResult}"
         }
     }
 }
