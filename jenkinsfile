@@ -5,10 +5,12 @@ pipeline {
         stage('Checkout') {
             steps {
                 echo "1. Fetching code from Git repository..."
-                checkout([$class: 'GitSCM', 
-                         branches: [[name: '*/main']],
-                         extensions: [],
-                         userRemoteConfigs: [[url: 'https://github.com/NourChallouf1/summerinternship.git']])
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    extensions: [],
+                    userRemoteConfigs: [[url: 'https://github.com/NourChallouf1/summerinternship.git']]
+                ])
             }
         }
         
