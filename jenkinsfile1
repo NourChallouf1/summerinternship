@@ -7,7 +7,7 @@ pipeline {
     }
 
     stages {
-        // STAGE 1: COM PORT DETECTION (SIMULATION)
+        // STAGE 1: COM PORT DETECTION
         stage('Detect COM Port') {
             steps {
                 script {
@@ -21,29 +21,28 @@ pipeline {
             }
         }
 
-        // STAGE 2: PACKAGE PREPARATION (DOLLAR SIGN FIXED)
+        // STAGE 2: PACKAGE PREPARATION (FIXED)
         stage('Prepare Package') {
             steps {
                 script {
                     env.UPD_FILE = "update_${currentBuild.number}.upd"
-                    bat '''  # Using single quotes to avoid $ issues
+                    bat """
                         echo [INFO] Processing %CATALOGUE_FILE% > prep.log
                         echo Creating package: %UPD_FILE% >> prep.log
                         echo Cost: \$5 (simulated) >> prep.log
                         echo Simulated content > "%UPD_FILE%"
-                    '''
+                    """
                 }
             }
         }
 
-        // STAGE 3: DEPLOYMENT (SAFE COMMAND EXECUTION)
+        // STAGE 3: DEPLOYMENT
         stage('Deploy') {
             steps {
                 bat """
                     echo [DEPLOY] Starting deployment > deploy.log
                     echo Would execute: "%LLT_PATH%" /port:%DETECTED_COM_PORT% /file:"%UPD_FILE%" >> deploy.log
                     echo Status: Success >> deploy.log
-                    echo Timestamp: \${new Date()} >> deploy.log  # Proper escaped variable
                 """
             }
         }
@@ -51,7 +50,7 @@ pipeline {
 
     post {
         always {
-            archiveArtifacts artifacts: '*.log,*.upd', allowEmptyArchive: true
+            archiveArtifacts artifacts: '*.log,*.upd,status.txt', allowEmptyArchive: true
             echo "Pipeline completed. Artifacts archived."
         }
         success {
