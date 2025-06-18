@@ -5,7 +5,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 echo "1. Fetching code from Git repository..."
-                git branch: 'main',
+                git branch: 'main', 
                 url: 'https://github.com/NourChallouf1/summerinternship.git'
             }
         }
@@ -13,17 +13,16 @@ pipeline {
         stage('Build') {
             steps {
                 echo "2. Building the application..."
-                // Windows compatible commands
                 bat 'echo Simulating build step...'
-                bat 'python --version || echo Python not installed'
+                bat 'python --version || echo [INFO] Python not installed - continuing simulation'
+                // Continue even if Python is missing
             }
         }
         
         stage('Test') {
             steps {
                 echo "3. Running tests..."
-                bat 'echo Running tests...'
-                bat 'echo Tests passed!'
+                bat 'echo Simulating tests...'
             }
         }
         
@@ -31,7 +30,6 @@ pipeline {
             steps {
                 echo "4. Deploying application..."
                 bat 'echo Simulating deployment...'
-                bat 'echo curl -X POST http://fake-deploy-api/deploy'
             }
         }
     }
@@ -39,12 +37,6 @@ pipeline {
     post {
         always {
             echo "Pipeline completed!"
-        }
-        success {
-            echo "✅ Success!"
-        }
-        failure {
-            echo "❌ Pipeline failed"
         }
     }
 }
