@@ -1,56 +1,71 @@
 pipeline {
     agent any
-    
+
+    environment {
+        // Set these in Jenkins credentials or adjust as needed
+        CATALOGUE_FILE = 'software_catalogue.Mxx'
+        LLT_PATH = 'C:\\Program Files\\Ingenico\\LoadAndLaunchTool\\LLT.exe'
+    }
+
     stages {
-        stage('Checkout') {
+        // STAGE 1: Simulate COM Port Detection
+        stage('Detect COM Port') {
             steps {
-                echo "1. Fetching code from Git repository..."
-                checkout([
-                    $class: 'GitSCM',
-                    branches: [[name: '*/main']],
-                    extensions: [],
-                    userRemoteConfigs: [[url: 'https://github.com/NourChallouf1/summerinternship.git']]
-                ])
-            }
-        }
-        
-        stage('Build') {
-            steps {
-                echo "2. Building the application..."
                 script {
-                    // Safe Python check that won't fail the pipeline
-                    def pythonCheck = bat(script: 'python --version', returnStatus: true)
-                    if (pythonCheck == 0) {
-                        echo "Python is available"
-                    } else {
-                        echo "Python not found - continuing in simulation mode"
-                    }
+                    echo "🔍 Simulating COM port detection for Ingenico Move/3500..."
                     
-                    // Continue with build steps
-                    bat 'echo Simulating build process...'
+                    // In real usage, replace with actual COM port detection logic
+                    def comPorts = ['COM1', 'COM3', 'COM4', 'COM5']
+                    env.DETECTED_COM_PORT = comPorts[new Random().nextInt(comPorts.size())]
+                    
+                    echo "✅ Terminal detected on: ${env.DETECTED_COM_PORT}"
                 }
             }
         }
-        
-        stage('Test') {
+
+        // STAGE 2: Extract .upd from Catalogue (Simulated)
+        stage('Prepare Package') {
             steps {
-                echo "3. Running tests..."
-                bat 'echo Simulating test execution...'
-                bat 'echo All tests passed!'
+                script {
+                    echo "📦 Processing ${env.CATALOGUE_FILE}..."
+                    
+                    // Simulate .upd extraction
+                    def updFile = "ingenico_package_${currentBuild.number}.upd"
+                    bat """
+                        echo Extracting .upd from catalogue... > log.txt
+                        echo SimulatedUPDContent > "${updFile}"
+                    """
+                    env.UPD_FILE = updFile
+                    
+                    echo "✅ Created simulated package: ${env.UPD_FILE}"
+                }
             }
         }
-        
-        stage('Deploy') {
+
+        // STAGE 3: Simulate Deployment via LLT
+        stage('Deploy to Terminal') {
             steps {
-                echo "4. Deploying application..."
-                bat 'echo Simulating deployment...'
+                script {
+                    echo "🚀 Simulating deployment via LLT..."
+                    bat """
+                        echo "Would execute: ${env.LLT_PATH} /port:${env.DETECTED_COM_PORT} /file:${env.UPD_FILE} /silent"
+                        echo Deployment successful! > result.txt
+                    """
+                }
             }
         }
     }
-    
+
     post {
         always {
-            echo "Pipeline completed with status: ${currentBuild.currentResult}"
+            echo "🏁 Pipeline completed - Result: ${currentBuild.currentResult}"
+            archiveArtifacts artifacts: '*.txt', allowEmptyArchive: true  // Save logs
+        }
+        success {
+            echo "🎉 Successfully simulated terminal update!"
+        }
+        failure {
+            echo "❌ Simulation failed - check logs"
         }
     }
 }
