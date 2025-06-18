@@ -1,56 +1,50 @@
 pipeline {
-    agent any  // Runs on any available Jenkins agent
-
+    agent any
+    
     stages {
-        // Stage 1: Checkout code from Git (simulated)
         stage('Checkout') {
             steps {
                 echo "1. Fetching code from Git repository..."
-                // In a real scenario: git 'https://github.com/your-repo.git'
-                sh 'echo "Simulating Git checkout..."'
+                git branch: 'main',
+                url: 'https://github.com/NourChallouf1/summerinternship.git'
             }
         }
-
-        // Stage 2: Build the application
+        
         stage('Build') {
             steps {
                 echo "2. Building the application..."
-                // Example for Python (replace with Java/Node.js as needed)
-                sh 'echo "Simulating build step..."'
-                sh 'python --version || echo "Python not installed (simulation)"'
+                // Windows compatible commands
+                bat 'echo Simulating build step...'
+                bat 'python --version || echo Python not installed'
             }
         }
-
-        // Stage 3: Run tests
+        
         stage('Test') {
             steps {
                 echo "3. Running tests..."
-                // Simulated test execution
-                sh 'echo "Running unit tests (simulated)..."'
-                sh 'echo "Tests passed!"'  // Always passes in simulation
+                bat 'echo Running tests...'
+                bat 'echo Tests passed!'
             }
         }
-
-        // Stage 4: Deploy (simulated)
+        
         stage('Deploy') {
             steps {
                 echo "4. Deploying application..."
-                // Simulated deployment (replace with real commands)
-                sh 'echo "Deploying to staging environment (simulated)..."'
-                sh 'echo "curl -X POST http://fake-deploy-api/deploy"'
+                bat 'echo Simulating deployment...'
+                bat 'echo curl -X POST http://fake-deploy-api/deploy'
             }
         }
     }
-
+    
     post {
         always {
             echo "Pipeline completed!"
         }
         success {
-            echo "🎉 Success! (Simulated deployment worked)"
+            echo "✅ Success!"
         }
         failure {
-            echo "❌ Pipeline failed (simulated)"
+            echo "❌ Pipeline failed"
         }
     }
 }
